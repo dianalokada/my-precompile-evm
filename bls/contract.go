@@ -12,10 +12,12 @@ import (
 	"github.com/ava-labs/subnet-evm/accounts/abi"
 	"github.com/ava-labs/subnet-evm/precompile/contract"
 	"github.com/ava-labs/subnet-evm/vmerrs"
+	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 
 	_ "embed"
 
 	"github.com/ethereum/go-ethereum/common"
+	
 )
 
 const (
@@ -23,8 +25,8 @@ const (
 	// You should set a gas cost for each function in your contract.
 	// Generally, you should not set gas costs very low as this may cause your network to be vulnerable to DoS attacks.
 	// There are some predefined gas costs in contract/utils.go that you can use.
-	VerifyAndFormatBLSSignatureGasCost uint64 = 1 /* SET A GAS COST HERE */
-	VerifyBLSSignatureGasCost          uint64 = 1 /* SET A GAS COST HERE */
+	VerifyAndFormatBLSSignatureGasCost uint64 = 50000 /* SET A GAS COST HERE */
+	VerifyBLSSignatureGasCost          uint64 = 40000 /* SET A GAS COST HERE */
 )
 
 // CUSTOM CODE STARTS HERE
@@ -93,28 +95,38 @@ func UnpackVerifyAndFormatBLSSignatureOutput(output []byte) (string, error) {
 }
 
 func verifyAndFormatBLSSignature(accessibleState contract.AccessibleState, caller common.Address, addr common.Address, input []byte, suppliedGas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
-	if remainingGas, err = contract.DeductGas(suppliedGas, VerifyAndFormatBLSSignatureGasCost); err != nil {
-		return nil, 0, err
-	}
-	// attempts to unpack [input] into the arguments to the VerifyAndFormatBLSSignatureInput.
-	// Assumes that [input] does not include selector
-	// You can use unpacked [inputStruct] variable in your code
-	inputStruct, err := UnpackVerifyAndFormatBLSSignatureInput(input)
-	if err != nil {
-		return nil, remainingGas, err
-	}
+    if remainingGas, err = contract.DeductGas(suppliedGas, VerifyAndFormatBLSSignatureGasCost); err != nil {
+        return nil, 0, err
+    }
+    inputStruct, err := UnpackVerifyAndFormatBLSSignatureInput(input)
+    if err != nil {
+        return nil, remainingGas, err
+    }
 
-	// CUSTOM CODE STARTS HERE
-	_ = inputStruct // CUSTOM CODE OPERATES ON INPUT
+    // Verify the signature
+    publicKey, err := bls.PublicKeyFromBytes(inputStruct.PublicKey)
+    if err != nil {
+        return nil, remainingGas, err
+    }
+    signature, err := bls.SignatureFromBytes(inputStruct.Signature)
+    if err != nil {
+        return nil, remainingGas, err
+    }
+    messageHash := bls.Hash([]byte(inputStruct.Message))
+    
+    if !bls.Verify(publicKey, signature, messageHash) {
+        return nil, remainingGas, errors.New("invalid signature")
+    }
 
-	var output string // CUSTOM CODE FOR AN OUTPUT
-	packedOutput, err := PackVerifyAndFormatBLSSignatureOutput(output)
-	if err != nil {
-		return nil, remainingGas, err
-	}
+    // Format the signature
+    formattedSignature := signature.String()
 
-	// Return the packed output and the remaining gas
-	return packedOutput, remainingGas, nil
+    packedOutput, err := PackVerifyAndFormatBLSSignatureOutput(formattedSignature)
+    if err != nil {
+        return nil, remainingGas, err
+    }
+
+    return packedOutput, remainingGas, nil
 }
 
 // UnpackVerifyBLSSignatureInput attempts to unpack [input] as VerifyBLSSignatureInput
@@ -149,28 +161,33 @@ func UnpackVerifyBLSSignatureOutput(output []byte) (bool, error) {
 }
 
 func verifyBLSSignature(accessibleState contract.AccessibleState, caller common.Address, addr common.Address, input []byte, suppliedGas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
-	if remainingGas, err = contract.DeductGas(suppliedGas, VerifyBLSSignatureGasCost); err != nil {
-		return nil, 0, err
-	}
-	// attempts to unpack [input] into the arguments to the VerifyBLSSignatureInput.
-	// Assumes that [input] does not include selector
-	// You can use unpacked [inputStruct] variable in your code
-	inputStruct, err := UnpackVerifyBLSSignatureInput(input)
-	if err != nil {
-		return nil, remainingGas, err
-	}
+    if remainingGas, err = contract.DeductGas(suppliedGas, VerifyBLSSignatureGasCost); err != nil {
+        return nil, 0, err
+    }
+    inputStruct, err := UnpackVerifyBLSSignatureInput(input)
+    if err != nil {
+        return nil, remainingGas, err
+    }
 
-	// CUSTOM CODE STARTS HERE
-	_ = inputStruct // CUSTOM CODE OPERATES ON INPUT
+    // Verify the signature
+    publicKey, err := bls.PublicKeyFromBytes(inputStruct.PublicKey)
+    if err != nil {
+        return nil, remainingGas, err
+    }
+    signature, err := bls.SignatureFromBytes(inputStruct.Signature)
+    if err != nil {
+        return nil, remainingGas, err
+    }
+    messageHash := bls.Hash([]byte(inputStruct.Message))
+    
+    isValid := bls.Verify(publicKey, signature, messageHash)
 
-	var output bool // CUSTOM CODE FOR AN OUTPUT
-	packedOutput, err := PackVerifyBLSSignatureOutput(output)
-	if err != nil {
-		return nil, remainingGas, err
-	}
+    packedOutput, err := PackVerifyBLSSignatureOutput(isValid)
+    if err != nil {
+        return nil, remainingGas, err
+    }
 
-	// Return the packed output and the remaining gas
-	return packedOutput, remainingGas, nil
+    return packedOutput, remainingGas, nil
 }
 
 // createBlsPrecompile returns a StatefulPrecompiledContract with getters and setters for the precompile.
