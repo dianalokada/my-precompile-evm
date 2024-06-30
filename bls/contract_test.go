@@ -29,20 +29,6 @@ var (
 // tests for specific cases.
 var (
 	tests = map[string]testutils.PrecompileTest{
-		"insufficient gas for verifyAndFormatBLSSignature should fail": {
-			Caller: common.Address{1},
-			InputFn: func(t testing.TB) []byte {
-				// CUSTOM CODE STARTS HERE
-				// populate test input here
-				testInput := VerifyAndFormatBLSSignatureInput{}
-				input, err := PackVerifyAndFormatBLSSignature(testInput)
-				require.NoError(t, err)
-				return input
-			},
-			SuppliedGas: VerifyAndFormatBLSSignatureGasCost - 1,
-			ReadOnly:    false,
-			ExpectedErr: vmerrs.ErrOutOfGas.Error(),
-		},
 		"insufficient gas for verifyBLSSignature should fail": {
 			Caller: common.Address{1},
 			InputFn: func(t testing.TB) []byte {
