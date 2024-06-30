@@ -1,6 +1,6 @@
 # Cross-Chain BLS Signature Verification dApp (Part 2)
 
-## Part 2: Creating a Signature Verification Precompile Contract
+### Part 2: Creating a Signature Verification Precompile Contract
 
 Precompiled contracts are a way to execute code written in the low-level coding language Go from the EVM. Go is much faster and more efficient than Solidity. If you are familiar with Python programming, you might be familiar with a similar concept. Many Python functions and libraries are written in the programming language C, since it is much more efficient than Python.
 
@@ -8,7 +8,7 @@ Precompiled contracts are a way to execute code written in the low-level coding 
 
 The task here is to write a precompile that can verify a BLS signature for a message and a BLS Public Key.
 
-### Part 1 of this assesment is located here: [Create a Cross-Chain dApp with Verification](https://github.com/dianalokada/avalanche-starter-kit).
+Part 1 of this assessment is located here: [Create a Cross-Chain dApp with Verification](https://github.com/dianalokada/avalanche-starter-kit).
 
 ## Learn about Precompile-EVM
 
@@ -43,11 +43,7 @@ In order to run the Dev Container locally:
 - Clone the Repository
 - Open the Container by issuing the Command "Dev Containers: Reopen in Container" in the VS Code command palette (on Mac-OS, run [Cmd + Shift + P]).
 
-## How to use
-
-There is an example branch [hello-world-example](https://github.com/ava-labs/precompile-evm/tree/hello-world-example) in this repository. You can check the example branch to see how to register precompiles and test them.
-
-## Overview of Steps that were taken to build a BLS Signature Verification Precompile Contract 
+## Overview of Steps 
 
 - Create a Solidity interface for the precompile
 - Generate the ABI
