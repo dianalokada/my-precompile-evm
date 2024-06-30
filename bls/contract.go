@@ -24,7 +24,7 @@ const (
 	// You should set a gas cost for each function in your contract.
 	// Generally, you should not set gas costs very low as this may cause your network to be vulnerable to DoS attacks.
 	// There are some predefined gas costs in contract/utils.go that you can use.
-	// VerifyAndFormatBLSSignatureGasCost uint64 = 50000 /* SET A GAS COST HERE */
+	// 40.000 is a moderate to high computational cost for a cryptographic operation like BLS signature verification.
 	VerifyBLSSignatureGasCost uint64 = 40000 /* SET A GAS COST HERE */
 )
 
@@ -38,6 +38,8 @@ var (
 	_ = common.Big0
 )
 
+// data = len(message) | message | len(signature) | signature | len(publicKey) | publicKey
+
 // Singleton StatefulPrecompiledContract and signatures.
 var (
 
@@ -49,12 +51,6 @@ var (
 
 	BlsPrecompile = createBlsPrecompile()
 )
-
-// type VerifyAndFormatBLSSignatureInput struct {
-// 	Message   string
-// 	Signature []byte
-// 	PublicKey []byte
-// }
 
 type VerifyBLSSignatureInput struct {
 	Message   string

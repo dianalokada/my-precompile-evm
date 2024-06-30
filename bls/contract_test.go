@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 	"github.com/ava-labs/subnet-evm/core/state"
 	"github.com/ava-labs/subnet-evm/precompile/testutils"
 	"github.com/ava-labs/subnet-evm/vmerrs"
@@ -34,7 +35,11 @@ var (
 			InputFn: func(t testing.TB) []byte {
 				// CUSTOM CODE STARTS HERE
 				// populate test input here
-				testInput := VerifyBLSSignatureInput{}
+				testInput := VerifyBLSSignatureInput{
+					Message:   "test message",
+                    Signature: []byte{0x01, 0x02, 0x03}, // Example signature bytes
+                    PublicKey: []byte{0x04, 0x05, 0x06}, // Example public key bytes
+				}
 				input, err := PackVerifyBLSSignature(testInput)
 				require.NoError(t, err)
 				return input
@@ -43,6 +48,94 @@ var (
 			ReadOnly:    false,
 			ExpectedErr: vmerrs.ErrOutOfGas.Error(),
 		},
+		"invalid signature should fail verification": {
+            Caller: common.Address{1},
+            InputFn: func(t testing.TB) []byte {
+                sk, err := bls.NewSecretKey()
+                require.NoError(t, err)
+                pk := bls.PublicFromSecretKey(sk)
+                message := []byte("test message")
+                sig := bls.Sign(sk, []byte("different message"))
+
+                testInput := VerifyBLSSignatureInput{
+                    Message:   string(message),
+                    Signature: bls.SignatureToBytes(sig),
+                    PublicKey: bls.PublicKeyToCompressedBytes(pk),
+                }
+                input, err := PackVerifyBLSSignature(testInput)
+                require.NoError(t, err)
+                return input
+            },
+            SuppliedGas: VerifyBLSSignatureGasCost,
+            ReadOnly:    false,
+            ExpectedRes: common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000000000"),
+        },
+		"valid signature should verify successfully": {
+			Caller: common.Address{1},
+			InputFn: func(t testing.TB) []byte {
+				privateKey, err := bls.NewSecretKey()
+				require.NoError(t, err)
+				publicKey := bls.PublicFromSecretKey(privateKey)
+				message := []byte("test message")
+				signature := bls.Sign(privateKey, message)
+
+				testInput := VerifyBLSSignatureInput{
+					Message:   string(message),
+					Signature: bls.SignatureToBytes(signature),
+					PublicKey: bls.PublicKeyToCompressedBytes(publicKey),
+				}
+				input, err := PackVerifyBLSSignature(testInput)
+				require.NoError(t, err)
+				return input
+			},
+			SuppliedGas: VerifyBLSSignatureGasCost,
+			ReadOnly:    false,
+			ExpectedRes: common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000000001"), // Assuming true is represented as 32 bytes with the last byte as 1
+			ExpectedErr: "",
+		},
+		"invalid public key should fail": {
+            Caller: common.Address{1},
+            InputFn: func(t testing.TB) []byte {
+                sk, err := bls.NewSecretKey()
+                require.NoError(t, err)
+                message := []byte("test message")
+                sig := bls.Sign(sk, message)
+
+                testInput := VerifyBLSSignatureInput{
+                    Message:   string(message),
+                    Signature: bls.SignatureToBytes(sig),
+                    PublicKey: make([]byte, bls.PublicKeyLen),
+                }
+                input, err := PackVerifyBLSSignature(testInput)
+                require.NoError(t, err)
+                return input
+            },
+            SuppliedGas: VerifyBLSSignatureGasCost,
+            ReadOnly:    false,
+            ExpectedErr: "invalid public key",
+        },
+		"empty message should be handled": {
+            Caller: common.Address{1},
+            InputFn: func(t testing.TB) []byte {
+                sk, err := bls.NewSecretKey()
+                require.NoError(t, err)
+                pk := bls.PublicFromSecretKey(sk)
+                message := []byte{}
+                sig := bls.Sign(sk, message)
+
+                testInput := VerifyBLSSignatureInput{
+                    Message:   string(message),
+                    Signature: bls.SignatureToBytes(sig),
+                    PublicKey: bls.PublicKeyToCompressedBytes(pk),
+                }
+                input, err := PackVerifyBLSSignature(testInput)
+                require.NoError(t, err)
+                return input
+            },
+            SuppliedGas: VerifyBLSSignatureGasCost,
+            ReadOnly:    false,
+            ExpectedRes: common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000000001"),
+        },
 	}
 )
 
