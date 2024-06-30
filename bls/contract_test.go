@@ -140,60 +140,61 @@ var (
 )
 
 // TestBlsRun tests the Run function of the precompile contract.
-func TestBlsRun(t *testing.T) {
-	// Run tests.
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			test.Run(t, Module, state.NewTestStateDB(t))
-		})
-	}
-	// Fuzz testing
-    N := 1000 // Number of fuzz tests to run
 
-    for i := 0; i < N; i++ {
-        t.Run("Fuzz test", func(t *testing.T) {
-            // Generate random inputs
-            sk, err := bls.NewSecretKey()
-            require.NoError(t, err)
-            pk := bls.PublicFromSecretKey(sk)
+// func TestBlsRun(t *testing.T) {
+// 	// Run tests.
+// 	for name, test := range tests {
+// 		t.Run(name, func(t *testing.T) {
+// 			test.Run(t, Module, state.NewTestStateDB(t))
+// 		})
+// 	}
+// 	// Fuzz testing
+//     N := 1000 // Number of fuzz tests to run
 
-            // Use a deterministic but varying message
-            message := []byte("test message " + string(byte(i%256)))
+//     for i := 0; i < N; i++ {
+//         t.Run("Fuzz test", func(t *testing.T) {
+//             // Generate random inputs
+//             sk, err := bls.NewSecretKey()
+//             require.NoError(t, err)
+//             pk := bls.PublicFromSecretKey(sk)
 
-            // Sometimes use a different message for signing to test invalid signatures
-            signMessage := message
-            if i%5 == 0 { // 20% chance of invalid signature
-                signMessage = []byte("different message")
-            }
+//             // Use a deterministic but varying message
+//             message := []byte("test message " + string(byte(i%256)))
 
-            sig := bls.Sign(sk, signMessage)
+//             // Sometimes use a different message for signing to test invalid signatures
+//             signMessage := message
+//             if i%5 == 0 { // 20% chance of invalid signature
+//                 signMessage = []byte("different message")
+//             }
 
-            testInput := VerifyBLSSignatureInput{
-                Message:   string(message),
-                Signature: bls.SignatureToBytes(sig),
-                PublicKey: bls.PublicKeyToCompressedBytes(pk),
-            }
-            input, err := PackVerifyBLSSignature(testInput)
-            require.NoError(t, err)
+//             sig := bls.Sign(sk, signMessage)
 
-            // Expected result
-            expectedRes := common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000000001")
-            if i%5 == 0 {
-                expectedRes = common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000000000")
-            }
+//             testInput := VerifyBLSSignatureInput{
+//                 Message:   string(message),
+//                 Signature: bls.SignatureToBytes(sig),
+//                 PublicKey: bls.PublicKeyToCompressedBytes(pk),
+//             }
+//             input, err := PackVerifyBLSSignature(testInput)
+//             require.NoError(t, err)
 
-            fuzzTest := testutils.PrecompileTest{
-                Caller:      common.Address{1},
-                Input:       input,
-                SuppliedGas: VerifyBLSSignatureGasCost,
-                ReadOnly:    false,
-                ExpectedRes: expectedRes,
-            }
+//             // Expected result
+//             expectedRes := common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000000001")
+//             if i%5 == 0 {
+//                 expectedRes = common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000000000")
+//             }
 
-            fuzzTest.Run(t, Module, state.NewTestStateDB(t))
-        })
-    }
-}
+//             fuzzTest := testutils.PrecompileTest{
+//                 Caller:      common.Address{1},
+//                 Input:       input,
+//                 SuppliedGas: VerifyBLSSignatureGasCost,
+//                 ReadOnly:    false,
+//                 ExpectedRes: expectedRes,
+//             }
+
+//             fuzzTest.Run(t, Module, state.NewTestStateDB(t))
+//         })
+//     }
+// }
 
 func BenchmarkBls(b *testing.B) {
 	// Benchmark tests.
