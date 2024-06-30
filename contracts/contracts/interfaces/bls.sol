@@ -18,3 +18,4 @@ interface IBLSSignatureVerifier {
         // bytes calldata data
     ) external view returns (bool isValid);
 }
+
