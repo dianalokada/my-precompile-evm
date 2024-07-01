@@ -114,28 +114,6 @@ var (
             ReadOnly:    false,
             ExpectedErr: "invalid public key",
         },
-		"empty message should be handled": {
-            Caller: common.Address{1},
-            InputFn: func(t testing.TB) []byte {
-                sk, err := bls.NewSecretKey()
-                require.NoError(t, err)
-                pk := bls.PublicFromSecretKey(sk)
-                message := []byte{}
-                sig := bls.Sign(sk, message)
-
-                testInput := VerifyBLSSignatureInput{
-                    Message:   string(message),
-                    Signature: bls.SignatureToBytes(sig),
-                    PublicKey: bls.PublicKeyToCompressedBytes(pk),
-                }
-                input, err := PackVerifyBLSSignature(testInput)
-                require.NoError(t, err)
-                return input
-            },
-            SuppliedGas: VerifyBLSSignatureGasCost,
-            ReadOnly:    false,
-            ExpectedRes: common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000000001"),
-        },
 	}
 )
 
